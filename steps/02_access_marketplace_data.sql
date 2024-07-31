@@ -1,5 +1,5 @@
 USE ROLE ACCOUNTADMIN;
-
+USE WAREHOUSE DEMO_WH;
 -- Verify marketplace data sets are accessible
 SELECT * FROM oag_flight_emissions_data_sample.public.estimated_emissions_schedules_sample LIMIT 100;
 SELECT * FROM oag_flight_status_data_sample.public.flight_status_latest_sample LIMIT 100;

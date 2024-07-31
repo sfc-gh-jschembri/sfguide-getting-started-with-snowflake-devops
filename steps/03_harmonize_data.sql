@@ -1,6 +1,6 @@
 -- Views to transform marketplace data in pipeline
 use role accountadmin;
-use schema quickstart_prod.silver;
+use schema common.silver;
 
 /*
 To join the flight and location focused tables 
@@ -64,7 +64,7 @@ create or replace view flights_from_home as
     punctual_pct,
   from flight_emissions
   join flight_punctuality on departure_airport = departure_iata_airport_code and arrival_airport = arrival_iata_airport_code
-  where departure_airport = (select $1:airport from @quickstart_common.public.quickstart_repo/branches/main/data/home.json (FILE_FORMAT => bronze.json_format));
+  where departure_airport = (select $1:airport from @common.utility.repo/branches/main/data/home.json (FILE_FORMAT => bronze.json_format));
 
 -- Weather Source provides a weather forecast for the upcoming two weeks. 
 -- As the free versions of the data sets we use do not cover the entire globe, 
@@ -112,3 +112,19 @@ create or replace view weather_joined_with_major_cities as
   join zip_codes_in_city zip on city.geo_id = zip.city_geo_id
   join weather_forecast weather on zip.zip_geo_name = weather.postal_code
   group by city.geo_id, city.geo_name, city.total_population;
+
+
+  create or replace view attractions as select
+    city.geo_id,
+    city.geo_name,
+    count(case when category_main = 'Aquarium' THEN 1 END) aquarium_cnt,
+    count(case when category_main = 'Zoo' THEN 1 END) zoo_cnt,
+    count(case when category_main = 'Korean Restaurant' THEN 1 END) korean_restaurant_cnt,
+from us_points_of_interest__addresses.cybersyn.point_of_interest_index poi
+join us_points_of_interest__addresses.cybersyn.point_of_interest_addresses_relationships poi_add on poi_add.poi_id = poi.poi_id
+join us_points_of_interest__addresses.cybersyn.us_addresses address on address.address_id = poi_add.address_id
+join major_us_cities city on city.geo_id = address.id_city
+where true
+    and category_main in ('Aquarium', 'Zoo', 'Korean Restaurant')
+    and id_country = 'country/USA'
+group by city.geo_id, city.geo_name;
